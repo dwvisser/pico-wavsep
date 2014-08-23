@@ -4,7 +4,8 @@ from argparse import ArgumentParser
 from os import getcwd
 from os.path import abspath, isdir, isfile
 from pickle import load, dump
-from subprocess import CalledProcessError, Popen
+from shutil import copyfile
+from subprocess import CalledProcessError, Popen, call
 from sys import argv, stdin, stderr
 from time import sleep
 from urllib import urlencode
@@ -15,6 +16,7 @@ import logging
 logging.basicConfig(filename='start.log',level=logging.DEBUG)
 
 TIMEOUT_SECONDS = 5
+JETTY = 'jetty-distribution-9.2.2.v20140723'
 SUCCESS_TEXT = \
 	'Mysql configuration rows replaced to reflect a successful installation'
 
@@ -24,11 +26,17 @@ def handle_setup_result(body):
     server_out.write('')
 
 def start_server(args):
-	server = Popen(['java', '-jar', 'jenkins-winstone.jar', 
-		'--warfile=wavsep.war', '--useJasper', '-commonLibFolder=lib', 
-	    '--httpPort={}'.format(args.http_port),
-	    '--ajp13Port={}'.format(args.ajp13_port)], stdout=server_out,
-	    stderr=server_err)
+	if not isdir(abspath(JETTY)):
+		print 'Extracting Jetty from tarball.'
+		call(['tar', 'xzf', '{}.tar.gz'.format(JETTY)])
+	warfile = 'wavsep.war'
+	warpath = '{}/webapps/{}'.format(JETTY, warfile)
+	if not isfile(warpath):
+		print 'Copying {} to {}/webapps.'.format(warfile, JETTY)
+		copyfile(warfile, warpath)
+	server = Popen(['java', '-jar', 'start.jar', 
+	    'jetty.port={}'.format(args.http_port)], cwd=JETTY,
+	    stdout=server_out, stderr=server_err)
 	print 'Wavsep server process started with PID {}.'.format(server.pid)
 	print 'Server normal messages are being sent to {}'.format(fn_out)
 	print 'Server error messages are being sent to {}'.format(fn_err)
@@ -85,8 +93,6 @@ parser.add_argument('--mysql-port', type=int, nargs='?', default='3306',
 	help='MySQL Server port (default=3306)', const='3306')
 parser.add_argument('--http-port', type=int, nargs='?', default='8080',
 	help='Wavsep application HTTP port (default=8080)', const='8080')
-parser.add_argument('--ajp13-port', type=int, nargs='?', default='8009',
-	help='Wavsep application AJP13 port (default=8009)', const='8009')
 fn_out = 'pico-wavsep.log'
 fn_flag = 'wavsep-installed.txt'
 parser.add_argument('--out', type=str, nargs='?', default=fn_out,
@@ -102,7 +108,7 @@ if not install:
 			previous = load(flagfile)
 	logging.debug('Previous install detected? {}'.format(previous))
 	if not previous:
-		parser.error('No "db" directory found. Please provide at least one explicit --mysql-* argument.')
+		parser.error('Previous install not detected. Please provide at least one explicit --mysql-* argument.')
 fn_out = args.out
 fn_err = 'pico-wavsep_err.log'
 server_out = open(fn_out, 'w')
