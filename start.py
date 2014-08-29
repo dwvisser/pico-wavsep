@@ -25,10 +25,17 @@ def handle_setup_result(body):
     server_out.write(body)
     server_out.write('')
 
+def copy_jetty_config(filename):
+	etc = '{}/etc'.format(JETTY)
+	print 'Copying {} to {}'.format(filename, etc)
+	copyfile(filename, '{}/{}'.format(etc, filename))
+
 def start_server(args):
 	if not isdir(abspath(JETTY)):
 		print 'Extracting Jetty from tarball.'
 		call(['tar', 'xzf', '{}.tar.gz'.format(JETTY)])
+	copy_jetty_config('jetty.xml')
+	copy_jetty_config('realm.properties')	
 	warfile = 'wavsep.war'
 	warpath = '{}/webapps/{}'.format(JETTY, warfile)
 	if not isfile(warpath):
@@ -45,7 +52,7 @@ def start_server(args):
 def install_db(server, parser, args, fn_flag):
 	print('Waiting a moment for server to initialize.')
 	sleep(TIMEOUT_SECONDS)
-	installURL = 'http://localhost:{}/wavsep-install/install.jsp'.format(
+	installURL = 'http://localhost:{}/wavsep/wavsep-install/install.jsp'.format(
 		args.http_port)
 	logging.debug('Sending setup request to {}'.format(installURL))
 	setup_params = {'username':args.mysql_user, 'password':args.mysql_pass,
