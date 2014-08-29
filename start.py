@@ -117,7 +117,7 @@ if not install:
 	if not previous:
 		parser.error('Previous install not detected. Please provide at least one explicit --mysql-* argument.')
 fn_out = args.out
-fn_err = 'pico-wavsep_err.log'
+fn_err = '/dev/null'
 server_out = open(fn_out, 'w')
 server_err = open(fn_err, 'w')
 try:
