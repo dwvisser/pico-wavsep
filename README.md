@@ -1,6 +1,13 @@
 pico-wavsep
 ===========
 
+dwvisser fork, jetty branch
+---------------------------
+This is my effort expanding on to the original pico-wavsep with a useful Python launch script, as
+well as switching to [Jetty](http://www.eclipse.org/jetty/) for the servlet container. It is meant to be
+a working solution for [WavSep Issue 1009](https://code.google.com/p/zaproxy/issues/detail?id=1009). See the
+discussion there.
+
 A minimalistic way to run [wavsep](https://code.google.com/p/wavsep/)
 
 ```console
